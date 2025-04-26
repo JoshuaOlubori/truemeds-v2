@@ -5,6 +5,7 @@ import { ModeToggle } from "./mode-toggle"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Upload, BarChart3, Shield } from "lucide-react"
+// import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 
 export function Navbar() {
   const pathname = usePathname()
