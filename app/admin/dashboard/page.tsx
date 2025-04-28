@@ -83,7 +83,7 @@ export default function AdminDashboardPage() {
   const [timeRange, setTimeRange] = useState("30d")
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
-  const { isLoaded, userId, isSignedIn } = useAuth()
+  const { isLoaded, isSignedIn } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
@@ -95,6 +95,7 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
+        console.log("Fetching stats...")
         const response = await fetch("/api/stats")
 
         if (!response.ok) {

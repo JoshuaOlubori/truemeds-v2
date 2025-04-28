@@ -1,5 +1,5 @@
-import { Navbar } from "@/components/home/navbar";
-import { Footer } from "@/components/home/footer";
+import { Navbar } from "@/components/common/navbar";
+import { Footer } from "@/components/common/footer";
 import { Button } from "@/components/ui/button";
 import { UploadButton } from "@/components/home/upload-button";
 import { FloatingUploadButton } from "@/components/home/floating-upload-button";

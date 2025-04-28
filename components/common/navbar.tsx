@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { ModeToggle } from "./mode-toggle"
-import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
-import { Upload, BarChart3, Shield } from "lucide-react"
+import Link from "next/link";
+import { ModeToggle } from "../home/mode-toggle";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
+import { Upload, BarChart3, Shield } from "lucide-react";
 // import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 
 export function Navbar() {
-  const pathname = usePathname()
-  const isAdmin = pathname.startsWith("/admin")
+  const pathname = usePathname();
+  const isAdmin = pathname.startsWith("/admin");
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -33,7 +33,9 @@ export function Navbar() {
                 href="/upload"
                 className={cn(
                   "text-sm font-medium transition-colors hover:text-primary",
-                  pathname === "/upload" ? "text-primary" : "text-muted-foreground",
+                  pathname === "/upload"
+                    ? "text-primary"
+                    : "text-muted-foreground"
                 )}
               >
                 <span className="hidden sm:inline-flex items-center gap-1">
@@ -54,7 +56,9 @@ export function Navbar() {
               href="/admin/dashboard"
               className={cn(
                 "text-sm font-medium transition-colors hover:text-primary",
-                pathname === "/admin/dashboard" ? "text-primary" : "text-muted-foreground",
+                pathname === "/admin/dashboard"
+                  ? "text-primary"
+                  : "text-muted-foreground"
               )}
             >
               <span className="hidden sm:inline-flex items-center gap-1">
@@ -68,5 +72,5 @@ export function Navbar() {
         </nav>
       </div>
     </header>
-  )
+  );
 }
