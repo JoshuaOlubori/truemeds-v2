@@ -1,40 +1,55 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { StatsCard } from "@/components/home/stats-card"
-import { TimeSeriesChart } from "@/components/admin/time-series-chart"
-import { Heatmap } from "@/components/admin/heatmap"
-import { ScanHistoryCard } from "@/components/home/scan-history-card"
-import { Button } from "@/components/ui/button"
-import { BarChart3, Calendar, Download, Filter, Pill, Shield, AlertTriangle, Loader2 } from "lucide-react"
-import { useAuth } from "@clerk/nextjs"
-import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StatsCard } from "@/components/home/stats-card";
+import { TimeSeriesChart } from "@/components/admin/time-series-chart";
+import { Heatmap } from "@/components/admin/heatmap";
+import { ScanHistoryCard } from "@/components/home/scan-history-card";
+import { Button } from "@/components/ui/button";
+import {
+  BarChart3,
+  Calendar,
+  Download,
+  Filter,
+  Pill,
+  Shield,
+  AlertTriangle,
+  Loader2,
+} from "lucide-react";
+import { useAuth } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 
 interface DashboardStats {
   scans: {
-    total: number
-    last24Hours: number
-    last7Days: number
-    last30Days: number
-    fakeDetectionRate: string
-    fakeDetections: number
-  }
+    total: number;
+    last24Hours: number;
+    last7Days: number;
+    last30Days: number;
+    fakeDetectionRate: string;
+    fakeDetections: number;
+  };
   training: {
-    total: number
-    original: number
-    fake: number
-    pending: number
-    processing: number
-    trained: number
-  }
+    total: number;
+    original: number;
+    fake: number;
+    pending: number;
+    processing: number;
+    trained: number;
+  };
   trends: {
     monthly: Array<{
-      month: string
-      count: number
-    }>
-  }
+      month: string;
+      count: number;
+    }>;
+  };
 }
 
 // Mock data for the heatmap
@@ -49,7 +64,7 @@ const heatmapPoints = [
   { lat: -33.8688, lng: 151.2093, intensity: 5 }, // Sydney
   { lat: 55.7558, lng: 37.6173, intensity: 6 }, // Moscow
   { lat: 28.6139, lng: 77.209, intensity: 9 }, // New Delhi
-]
+];
 
 // Mock data for recent scans
 const recentScans = [
@@ -77,44 +92,44 @@ const recentScans = [
     isFake: false,
     imageUrl: "/placeholder.svg?height=160&width=320",
   },
-]
+];
 
 export default function AdminDashboardPage() {
-  const [timeRange, setTimeRange] = useState("30d")
-  const [stats, setStats] = useState<DashboardStats | null>(null)
-  const [loading, setLoading] = useState(true)
-  const { isLoaded, isSignedIn } = useAuth()
-  const router = useRouter()
+  const [timeRange, setTimeRange] = useState("30d");
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { isLoaded, isSignedIn } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
-      router.push("/admin/login")
+      router.push("/admin/login");
     }
-  }, [isLoaded, isSignedIn, router])
+  }, [isLoaded, isSignedIn, router]);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        console.log("Fetching stats...")
-        const response = await fetch("/api/stats")
+        console.log("Fetching stats...");
+        const response = await fetch("/api/stats");
+        const data = await response.json();
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch stats")
+        if (response.ok) {
+          setStats(data);
+        } else {
+          console.error("Failed to fetch stats:", data.error);
         }
-
-        const data = await response.json()
-        setStats(data)
       } catch (error) {
-        console.error("Error fetching stats:", error)
+        console.error("Error fetching stats:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
     if (isSignedIn) {
-      fetchStats()
+      fetchStats();
     }
-  }, [isSignedIn])
+  }, [isSignedIn]);
 
   if (!isLoaded || loading) {
     return (
@@ -124,22 +139,24 @@ export default function AdminDashboardPage() {
           <p className="text-lg">Loading dashboard...</p>
         </div>
       </div>
-    )
+    );
   }
 
   // Format data for time series chart
   const timeSeriesData =
-    stats?.trends?.monthly?.map((item) => ({
-      date: item.month,
-      value: item.count,
-    })) || []
+    stats?.trends?.monthly?.map((monthData) => ({
+      date: monthData.month,
+      value: monthData.count,
+    })) || [];
 
   return (
     <div className="container py-8">
       <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Monitor drug verification statistics and trends</p>
+          <p className="text-muted-foreground">
+            Monitor drug verification statistics and trends
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="gap-1">
@@ -195,31 +212,41 @@ export default function AdminDashboardPage() {
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <StatsCard
               title="Total Scans"
-              value={stats?.scans.total || 0}
-              description={`+${timeRange === "24h" ? stats?.scans.last24Hours : timeRange === "7d" ? stats?.scans.last7Days : stats?.scans.last30Days} in the last ${timeRange}`}
+              value={stats?.scans?.total ?? 0}
+              description={`+${
+                timeRange === "24h"
+                  ? stats?.scans?.last24Hours ?? 0
+                  : timeRange === "7d"
+                  ? stats?.scans?.last7Days ?? 0
+                  : stats?.scans?.last30Days ?? 0
+              } in the last ${timeRange}`}
               icon={Shield}
               trend="up"
               trendValue="+5.2%"
             />
             <StatsCard
               title="Fake Detection Rate"
-              value={`${stats?.scans.fakeDetectionRate || 0}%`}
-              description={`${stats?.scans.fakeDetections || 0} fake drugs detected`}
+              value={`${stats?.scans?.fakeDetectionRate ?? "0"}%`}
+              description={`${
+                stats?.scans?.fakeDetections ?? 0
+              } fake drugs detected`}
               icon={AlertTriangle}
               trend="down"
               trendValue="-1.3%"
             />
             <StatsCard
               title="Training Images"
-              value={stats?.training.total || 0}
-              description={`${stats?.training.original || 0} original, ${stats?.training.fake || 0} fake`}
+              value={stats?.training?.total ?? 0}
+              description={`${stats?.training?.original ?? 0} original, ${
+                stats?.training?.fake ?? 0
+              } fake`}
               icon={Calendar}
               trend="up"
               trendValue="+12.5%"
             />
             <StatsCard
               title="Pending Training"
-              value={stats?.training.pending || 0}
+              value={stats?.training?.pending ?? 0}
               description="Images waiting to be processed"
               icon={BarChart3}
               trend="neutral"
@@ -246,7 +273,9 @@ export default function AdminDashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle>Most Common Fake Drugs</CardTitle>
-              <CardDescription>Drugs most frequently identified as counterfeit</CardDescription>
+              <CardDescription>
+                Drugs most frequently identified as counterfeit
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -255,11 +284,16 @@ export default function AdminDashboardPage() {
                   <div className="flex items-center gap-2">
                     <Pill className="h-4 w-4 text-muted-foreground" />
                     <span>Amoxicillin</span>
-                    <span className="text-sm text-muted-foreground">(245 detections)</span>
+                    <span className="text-sm text-muted-foreground">
+                      (245 detections)
+                    </span>
                   </div>
                   <div className="flex w-1/2 items-center gap-2">
                     <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-                      <div className="h-full bg-destructive" style={{ width: `19.6%` }} />
+                      <div
+                        className="h-full bg-destructive"
+                        style={{ width: `19.6%` }}
+                      />
                     </div>
                     <span className="text-sm font-medium">19.6%</span>
                   </div>
@@ -288,11 +322,14 @@ export default function AdminDashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle>Scan History</CardTitle>
-              <CardDescription>Detailed view of all drug verification scans</CardDescription>
+              <CardDescription>
+                Detailed view of all drug verification scans
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">
-                This tab would contain a detailed table of all scans with filtering and sorting options.
+                This tab would contain a detailed table of all scans with
+                filtering and sorting options.
               </p>
             </CardContent>
           </Card>
@@ -302,16 +339,19 @@ export default function AdminDashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle>Advanced Analytics</CardTitle>
-              <CardDescription>Detailed analytics and insights from verification data</CardDescription>
+              <CardDescription>
+                Detailed analytics and insights from verification data
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">
-                This tab would contain advanced analytics, including predictive models and trend analysis.
+                This tab would contain advanced analytics, including predictive
+                models and trend analysis.
               </p>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }

@@ -1,5 +1,5 @@
 import { verifyWebhook } from '@clerk/nextjs/webhooks'
-import { createUser, updateUser } from '@/app/server/db/user'
+import { createUser, updateUser } from '@/server/db/user'
 import { eq } from "drizzle-orm"
 import { UsersTable } from '@/drizzle/schema'
 import { NextRequest } from 'next/server'

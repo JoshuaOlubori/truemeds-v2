@@ -11,7 +11,7 @@ interface TimeSeriesChartProps {
   data: Array<{
     date: string
     value: number
-    [key: string]: any
+    [key: string]: unknown
   }>
   className?: string
   valueFormatter?: (value: number) => string
@@ -39,7 +39,7 @@ export function TimeSeriesChart({
       <CardContent>
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <ChartContainer>
+            <ChartContainer config={{}}>
               <AreaChart
                 data={data}
                 margin={{
@@ -77,7 +77,7 @@ export function TimeSeriesChart({
                 />
                 <ChartTooltip
                   content={
-                    <ChartTooltipContent categories={categories} colors={colors} valueFormatter={valueFormatter} />
+                    <ChartTooltipContent />
                   }
                 />
                 {categories.map((category, index) => (
