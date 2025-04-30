@@ -12,8 +12,9 @@ export async function GET(
   { params } : { params: tParams}
 ) {
   try {
-    const { id }: {id: string} = await params;
+
     // const { id } = await params;
+    const id = (await params).id
 
     const scan = (await db.query.scans.findFirst({
       where: eq(scans.id, id),
