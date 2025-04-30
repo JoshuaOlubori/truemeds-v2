@@ -1,11 +1,11 @@
- "use client"
- import { useParams } from 'next/navigation'
-import { useEffect, useState } from "react"
-import { Navbar } from "@/components/common/navbar"
-import { Footer } from "@/components/common/footer"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+"use client";
+
+import { useEffect, useState } from "react";
+import { Navbar } from "@/components/common/navbar";
+import { Footer } from "@/components/common/footer";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertTriangle,
   CheckCircle,
@@ -20,98 +20,106 @@ import {
   Info,
   ThumbsUp,
   ThumbsDown,
-} from "lucide-react"
-import Link from "next/link"
-import Image from "next/image"
-import { toast } from "sonner"
-import { useRouter } from "next/navigation"
+} from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 // Update the ScanResult interface to include all necessary fields
 interface ScanResult {
-  id: string
-  imageUrl: string
-  result: "fake" | "original"
-  confidence: number
-  drugName: string
-  manufacturer: string
-  indicators: string[]
-  geolocation: { lat: number; lng: number } | null
-  createdAt: string
+  id: string;
+  imageUrl: string;
+  result: "fake" | "original";
+  confidence: number;
+  drugName: string;
+  manufacturer: string;
+  indicators: string[];
+  geolocation: { lat: number; lng: number } | null;
+  createdAt: string;
 }
 
-export default function ResultPage({ params }: { params: { id: string } }) {
-  const [result, setResult] = useState<ScanResult | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
-  const router = useRouter()
+interface ResultPageParams {
+  id: string;
+}
 
+interface ResultPageProps {
+  params: Promise<ResultPageParams>;
+}
 
-
-const routeParams = useParams()
-const id = routeParams?.id as string | undefined
-
+export default function ResultPage({ params }: ResultPageProps) {
+  const [result, setResult] = useState<ScanResult | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchResult = async () => {
       try {
+        const resolvedParams = await params;
         // First try to fetch from API
-        const response = await fetch(`/api/scan/${id}`)
+        const response = await fetch(`/api/scan/${resolvedParams.id}`);
 
         if (response.ok) {
-          const data = await response.json()
-          setResult(data)
+          const data = await response.json();
+          setResult(data);
         } else {
           // Fallback to localStorage for demo purposes
-          const storedResult = localStorage.getItem(`scan-${params.id}`)
+          const storedResult = localStorage.getItem(
+            `scan-${resolvedParams.id}`
+          );
 
           if (storedResult) {
-            const data = JSON.parse(storedResult)
+            const data = JSON.parse(storedResult);
             // Add a timestamp if not present
             if (!data.createdAt) {
-              data.createdAt = new Date().toISOString()
+              data.createdAt = new Date().toISOString();
             }
-            setResult(data)
+            setResult(data);
           } else {
-            throw new Error("Result not found")
+            throw new Error("Result not found");
           }
         }
       } catch (err) {
-        console.error("Error fetching result:", err)
-        setError("Could not load the verification result")
+        console.error("Error fetching result:", err);
+        setError("Could not load the verification result");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchResult()
-  }, [params.id])
+    fetchResult();
+  }, [params]);
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href)
-    toast.success("Link copied to clipboard")
-  }
+    navigator.clipboard.writeText(window.location.href);
+    toast.success("Link copied to clipboard");
+  };
 
   const handleShare = async () => {
     if (navigator.share) {
       try {
         await navigator.share({
           title: "TrueMeds Verification Result",
-          text: `Check out this drug verification result: ${result?.result === "fake" ? "Potentially Fake" : "Likely Original"} (${result?.confidence}% confidence)`,
+          text: `Check out this drug verification result: ${
+            result?.result === "fake" ? "Potentially Fake" : "Likely Original"
+          } (${result?.confidence}% confidence)`,
           url: window.location.href,
-        })
+        });
       } catch (err) {
-        console.error("Error sharing:", err)
+        console.error("Error sharing:", err);
       }
     } else {
-      handleCopyLink()
+      handleCopyLink();
     }
-  }
+  };
 
   const submitFeedback = async (isHelpful: boolean) => {
-    if (!result) return
+    if (!result) return;
 
     try {
+      const resolvedParams = await params;
       // Submit feedback to API
       await fetch("/api/feedback", {
         method: "POST",
@@ -119,23 +127,23 @@ const id = routeParams?.id as string | undefined
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          scanId: params.id,
+          scanId: resolvedParams.id,
           isHelpful,
           resultType: result.result,
         }),
-      })
+      });
 
-      setFeedbackSubmitted(true)
-      toast.success("Thank you for your feedback!")
+      setFeedbackSubmitted(true);
+      toast.success("Thank you for your feedback!");
     } catch (error) {
-      console.error("Error submitting feedback:", error)
-      toast.error("Failed to submit feedback")
+      console.error("Error submitting feedback:", error);
+      toast.error("Failed to submit feedback");
     }
-  }
+  };
 
   const handleNewScan = () => {
-    router.push("/upload")
-  }
+    router.push("/upload");
+  };
 
   if (loading) {
     return (
@@ -149,7 +157,7 @@ const id = routeParams?.id as string | undefined
         </main>
         <Footer />
       </div>
-    )
+    );
   }
 
   if (error || !result) {
@@ -160,7 +168,10 @@ const id = routeParams?.id as string | undefined
           <div className="flex flex-col items-center gap-4 text-center">
             <AlertTriangle className="h-12 w-12 text-destructive" />
             <h2 className="text-2xl font-bold">Result Not Found</h2>
-            <p className="text-muted-foreground">The verification result you&apos;re looking for could not be found.</p>
+            <p className="text-muted-foreground">
+              The verification result you&apos;re looking for could not be
+              found.
+            </p>
             <Button asChild>
               <Link href="/upload">Try Another Verification</Link>
             </Button>
@@ -168,11 +179,11 @@ const id = routeParams?.id as string | undefined
         </main>
         <Footer />
       </div>
-    )
+    );
   }
 
-  const isFake = result.result === "fake"
-  const formattedDate = new Date(result.createdAt).toLocaleDateString()
+  const isFake = result.result === "fake";
+  const formattedDate = new Date(result.createdAt).toLocaleDateString();
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -189,8 +200,13 @@ const id = routeParams?.id as string | undefined
               </Button>
 
               <div className="flex flex-wrap items-center justify-between gap-4">
-                <h1 className="text-2xl font-bold md:text-3xl">Verification Result</h1>
-                <Badge variant={isFake ? "destructive" : "default"} className="px-3 py-1 text-sm">
+                <h1 className="text-2xl font-bold md:text-3xl">
+                  Verification Result
+                </h1>
+                <Badge
+                  variant={isFake ? "destructive" : "default"}
+                  className="px-3 py-1 text-sm"
+                >
                   {isFake ? "Potentially Fake" : "Likely Original"}
                 </Badge>
               </div>
@@ -218,17 +234,23 @@ const id = routeParams?.id as string | undefined
                       ) : (
                         <CheckCircle className="h-5 w-5 text-primary" />
                       )}
-                      <h2 className="text-xl font-medium">{isFake ? "Caution Advised" : "Verification Successful"}</h2>
+                      <h2 className="text-xl font-medium">
+                        {isFake ? "Caution Advised" : "Verification Successful"}
+                      </h2>
                     </div>
 
                     <div className="mb-4">
                       <div className="mb-1 flex items-center justify-between text-sm">
                         <span>Confidence</span>
-                        <span className="font-medium">{result.confidence}%</span>
+                        <span className="font-medium">
+                          {result.confidence}%
+                        </span>
                       </div>
                       <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
                         <div
-                          className={`h-full ${isFake ? "bg-destructive" : "bg-primary"}`}
+                          className={`h-full ${
+                            isFake ? "bg-destructive" : "bg-primary"
+                          }`}
                           style={{ width: `${result.confidence}%` }}
                         />
                       </div>
@@ -242,8 +264,12 @@ const id = routeParams?.id as string | undefined
                       </div>
                       <div className="flex items-center gap-2">
                         <Fingerprint className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">Manufacturer:</span>
-                        <span className="font-medium">{result.manufacturer}</span>
+                        <span className="text-muted-foreground">
+                          Manufacturer:
+                        </span>
+                        <span className="font-medium">
+                          {result.manufacturer}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -253,7 +279,9 @@ const id = routeParams?.id as string | undefined
                       {result.geolocation && (
                         <div className="flex items-center gap-2">
                           <MapPin className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">Location:</span>
+                          <span className="text-muted-foreground">
+                            Location:
+                          </span>
                           <span className="font-medium">Recorded</span>
                         </div>
                       )}
@@ -286,34 +314,53 @@ const id = routeParams?.id as string | undefined
 
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">Was this result helpful?</CardTitle>
+                    <CardTitle className="text-base">
+                      Was this result helpful?
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     {!feedbackSubmitted ? (
                       <div className="flex gap-3">
-                        <Button variant="outline" className="flex-1 gap-2" onClick={() => submitFeedback(true)}>
+                        <Button
+                          variant="outline"
+                          className="flex-1 gap-2"
+                          onClick={() => submitFeedback(true)}
+                        >
                           <ThumbsUp className="h-4 w-4" />
                           Yes
                         </Button>
-                        <Button variant="outline" className="flex-1 gap-2" onClick={() => submitFeedback(false)}>
+                        <Button
+                          variant="outline"
+                          className="flex-1 gap-2"
+                          onClick={() => submitFeedback(false)}
+                        >
                           <ThumbsDown className="h-4 w-4" />
                           No
                         </Button>
                       </div>
                     ) : (
                       <p className="text-center text-sm text-muted-foreground">
-                        Thank you for your feedback! It helps us improve our verification system.
+                        Thank you for your feedback! It helps us improve our
+                        verification system.
                       </p>
                     )}
                   </CardContent>
                 </Card>
 
                 <div className="flex gap-3">
-                  <Button variant="outline" className="flex-1 gap-2" onClick={handleCopyLink}>
+                  <Button
+                    variant="outline"
+                    className="flex-1 gap-2"
+                    onClick={handleCopyLink}
+                  >
                     <Copy className="h-4 w-4" />
                     Copy Link
                   </Button>
-                  <Button variant="outline" className="flex-1 gap-2" onClick={handleShare}>
+                  <Button
+                    variant="outline"
+                    className="flex-1 gap-2"
+                    onClick={handleShare}
+                  >
                     <Share2 className="h-4 w-4" />
                     Share
                   </Button>
@@ -329,9 +376,10 @@ const id = routeParams?.id as string | undefined
               <p className="flex items-start gap-2">
                 <AlertTriangle className="mt-0.5 h-4 w-4" />
                 <span>
-                  <strong>Disclaimer:</strong> This verification is provided for informational purposes only and should
-                  not be considered medical advice. Always consult with a healthcare professional before taking any
-                  medication.
+                  <strong>Disclaimer:</strong> This verification is provided for
+                  informational purposes only and should not be considered
+                  medical advice. Always consult with a healthcare professional
+                  before taking any medication.
                 </span>
               </p>
             </div>
@@ -340,5 +388,5 @@ const id = routeParams?.id as string | undefined
       </main>
       <Footer />
     </div>
-  )
+  );
 }

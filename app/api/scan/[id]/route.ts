@@ -1,22 +1,23 @@
-// @ts-expect-error:  expecting error
+
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/drizzle/db";
 import { scans } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 
-type tParams = Promise<{ id: string }>;
+// type tParams = Promise<{ id: string }>;
 
 
 
 export async function GET(
   _request: NextRequest,
-  { params } : { params: tParams}
+  { params }:{ params: Promise<{ id: string }> }
 ) {
   try {
 
-    // const { id } = await params;
     const id = (await params).id
+    // const { id } = await params;
+    // const id = (await params).id
 
     const scan = (await db.query.scans.findFirst({
       where: eq(scans.id, id),
