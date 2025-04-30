@@ -1,3 +1,5 @@
+// @ts-ignore
+
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/drizzle/db";
 import { scans } from "@/drizzle/schema";
@@ -8,7 +10,7 @@ type tParams = Promise<{ id: string }>;
 
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params } : { params: tParams}
 ) {
   try {
