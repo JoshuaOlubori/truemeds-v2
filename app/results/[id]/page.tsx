@@ -1,5 +1,5 @@
-"use client"
-
+ "use client"
+ import { useParams } from 'next/navigation'
 import { useEffect, useState } from "react"
 import { Navbar } from "@/components/common/navbar"
 import { Footer } from "@/components/common/footer"
@@ -46,11 +46,17 @@ export default function ResultPage({ params }: { params: { id: string } }) {
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
   const router = useRouter()
 
+
+
+const routeParams = useParams()
+const id = routeParams?.id as string
+
+
   useEffect(() => {
     const fetchResult = async () => {
       try {
         // First try to fetch from API
-        const response = await fetch(`/api/scan/${params.id}`)
+        const response = await fetch(`/api/scan/${id}`)
 
         if (response.ok) {
           const data = await response.json()
