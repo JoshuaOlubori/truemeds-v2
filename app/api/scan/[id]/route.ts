@@ -1,31 +1,33 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { db } from "@/drizzle/db"
-import { scans } from "@/drizzle/schema"
-import { eq } from "drizzle-orm"
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/drizzle/db";
+import { scans } from "@/drizzle/schema";
+import { eq } from "drizzle-orm";
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  request: NextRequest,
+  context: { params: { id: string } }
+) {
   try {
-    // Check if the ID is a valid UUID
-    const id = params.id
+    const id = context.params.id;
 
-    const scan = await db.query.scans.findFirst({
+    const scan = (await db.query.scans.findFirst({
       where: eq(scans.id, id),
-    }) as { 
-      id: string; 
-      imageUrl: string; 
-      result: string; 
-      confidence: number; 
-      metadata?: { 
-        drugName?: string; 
-        manufacturer?: string; 
-        indicators?: string[]; 
-      }; 
-      geolocation: string; 
-      createdAt?: Date; 
-    }
+    })) as {
+      id: string;
+      imageUrl: string;
+      result: string;
+      confidence: number;
+      metadata?: {
+        drugName?: string;
+        manufacturer?: string;
+        indicators?: string[];
+      };
+      geolocation: string;
+      createdAt?: Date;
+    };
 
     if (!scan) {
-      return NextResponse.json({ error: "Scan not found" }, { status: 404 })
+      return NextResponse.json({ error: "Scan not found" }, { status: 404 });
     }
 
     // Format the response to match the expected structure in the frontend
@@ -39,9 +41,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       indicators: scan.metadata?.indicators || [],
       geolocation: scan.geolocation,
       createdAt: scan.createdAt?.toISOString(),
-    })
+    });
   } catch (error) {
-    console.error("Error fetching scan:", error)
-    return NextResponse.json({ error: "Failed to fetch scan" }, { status: 500 })
+    console.error("Error fetching scan:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch scan" },
+      { status: 500 }
+    );
   }
 }
