@@ -39,7 +39,13 @@ interface ScanResult {
   createdAt: string
 }
 
-export default function ResultPage({ params }: { params: { id: string } }) {
+type PageProps = {
+  params: { id: string }
+ // searchParams: { [key: string]: string | string[] | undefined }
+}
+
+
+export default function ResultPage({ params }: PageProps) {
   const [result, setResult] = useState<ScanResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
