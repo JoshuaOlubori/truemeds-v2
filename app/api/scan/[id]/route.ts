@@ -3,13 +3,17 @@ import { db } from "@/drizzle/db";
 import { scans } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 
-export default async function GET(
+type tParams = Promise<{ id: string }>;
+
+
+
+export async function GET(
   request: NextRequest,
-  { params } : { params: Promise<{ id: string }> }
+  { params } : { params: tParams}
 ) {
   try {
-
-    const { id } = await params;
+    const { id }: {id: string} = await params;
+    // const { id } = await params;
 
     const scan = (await db.query.scans.findFirst({
       where: eq(scans.id, id),
