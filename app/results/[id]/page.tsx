@@ -49,7 +49,7 @@ export default function ResultPage({ params }: { params: { id: string } }) {
 
 
 const routeParams = useParams()
-const id = routeParams?.id as string
+const id = routeParams?.id as string | undefined
 
 
   useEffect(() => {
