@@ -1,41 +1,29 @@
-import { db } from "@/drizzle/db";
-import { scans, trainingImages } from "@/drizzle/schema";
-import { sql } from "drizzle-orm";
+import { db } from "@/drizzle/db"
+import { scans, trainingImages } from "@/drizzle/schema"
+import { sql } from "drizzle-orm"
 
 export async function getTotalScans() {
-  const result = await db.select({ count: sql`count(*)` }).from(scans);
-  return Number(result[0].count);
+  const result = await db.select({ count: sql`count(*)` }).from(scans)
+  return Number(result[0].count)
 }
 
 export async function getRecentScans() {
   const [last24Hours, last7Days, last30Days] = await Promise.all([
-    db
-      .select({ count: sql`count(*)` })
-      .from(scans)
-      .where(sql`created_at > NOW() - INTERVAL '24 hours'`),
-    db
-      .select({ count: sql`count(*)` })
-      .from(scans)
-      .where(sql`created_at > NOW() - INTERVAL '7 days'`),
-    db
-      .select({ count: sql`count(*)` })
-      .from(scans)
-      .where(sql`created_at > NOW() - INTERVAL '30 days'`),
-  ]);
+    db.select({ count: sql`count(*)` }).from(scans).where(sql`created_at > NOW() - INTERVAL '24 hours'`),
+    db.select({ count: sql`count(*)` }).from(scans).where(sql`created_at > NOW() - INTERVAL '7 days'`),
+    db.select({ count: sql`count(*)` }).from(scans).where(sql`created_at > NOW() - INTERVAL '30 days'`),
+  ])
 
   return {
     last24Hours: Number(last24Hours[0].count),
     last7Days: Number(last7Days[0].count),
     last30Days: Number(last30Days[0].count),
-  };
+  }
 }
 
 export async function getFakeDetectionStats() {
-  const result = await db
-    .select({ count: sql`count(*)` })
-    .from(scans)
-    .where(sql`result = 'fake'`);
-  return Number(result[0].count);
+  const result = await db.select({ count: sql`count(*)` }).from(scans).where(sql`result = 'fake'`)
+  return Number(result[0].count)
 }
 
 export async function getTrainingStats() {
@@ -48,7 +36,7 @@ export async function getTrainingStats() {
       processing: sql`sum(case when status = 'processing' then 1 else 0 end)`,
       trained: sql`sum(case when status = 'trained' then 1 else 0 end)`,
     })
-    .from(trainingImages);
+    .from(trainingImages)
 
   return {
     total: Number(result[0].total),
@@ -57,7 +45,7 @@ export async function getTrainingStats() {
     pending: Number(result[0].pending),
     processing: Number(result[0].processing),
     trained: Number(result[0].trained),
-  };
+  }
 }
 
 export async function getMonthlyTrends() {
@@ -69,7 +57,7 @@ export async function getMonthlyTrends() {
     WHERE created_at > NOW() - INTERVAL '12 months'
     GROUP BY date_trunc('month', created_at)
     ORDER BY date_trunc('month', created_at)
-  `);
+  `)
 
-  return result.rows;
+  return result.rows
 }

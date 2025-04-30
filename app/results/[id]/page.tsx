@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Navbar } from "@/components/common/navbar"
 import { Footer } from "@/components/common/footer"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
   AlertTriangle,
@@ -17,68 +17,62 @@ import {
   MapPin,
   Fingerprint,
   Loader2,
+  Info,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
-
+// Update the ScanResult interface to include all necessary fields
 interface ScanResult {
-  id: number
+  id: string
   imageUrl: string
-  result: string
+  result: "fake" | "original"
   confidence: number
+  drugName: string
+  manufacturer: string
+  indicators: string[]
   geolocation: { lat: number; lng: number } | null
   createdAt: string
-}
-
-// Mock data for drug details that would come from a real AI model
-const getDrugDetails = (result: string) => {
-  if (result === "fake") {
-    return {
-      drugName: "Amoxicillin 250mg",
-      manufacturer: "Unknown",
-      indicators: [
-        "Inconsistent packaging color",
-        "Blurry or unclear text",
-        "Missing hologram security feature",
-        "Unusual pill shape",
-      ],
-    }
-  } else {
-    return {
-      drugName: "Paracetamol 500mg",
-      manufacturer: "Pharma Inc.",
-      indicators: [
-        "Clear, consistent packaging",
-        "Sharp, legible text",
-        "Valid security features",
-        "Correct pill shape and color",
-      ],
-    }
-  }
 }
 
 export default function ResultPage({ params }: { params: { id: string } }) {
   const [result, setResult] = useState<ScanResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
     const fetchResult = async () => {
       try {
+        // First try to fetch from API
         const response = await fetch(`/api/scan/${params.id}`)
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch scan result")
-        }
+        if (response.ok) {
+          const data = await response.json()
+          setResult(data)
+        } else {
+          // Fallback to localStorage for demo purposes
+          const storedResult = localStorage.getItem(`scan-${params.id}`)
 
-        const data = await response.json()
-        setResult(data)
+          if (storedResult) {
+            const data = JSON.parse(storedResult)
+            // Add a timestamp if not present
+            if (!data.createdAt) {
+              data.createdAt = new Date().toISOString()
+            }
+            setResult(data)
+          } else {
+            throw new Error("Result not found")
+          }
+        }
       } catch (err) {
+        console.error("Error fetching result:", err)
         setError("Could not load the verification result")
-        console.error(err)
       } finally {
         setLoading(false)
       }
@@ -89,11 +83,7 @@ export default function ResultPage({ params }: { params: { id: string } }) {
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(window.location.href)
-    toast.message( "Link copied",{
-      
-      description: "The result link has been copied to your clipboard",
-    })
-
+    toast.success("Link copied to clipboard")
   }
 
   const handleShare = async () => {
@@ -110,6 +100,35 @@ export default function ResultPage({ params }: { params: { id: string } }) {
     } else {
       handleCopyLink()
     }
+  }
+
+  const submitFeedback = async (isHelpful: boolean) => {
+    if (!result) return
+
+    try {
+      // Submit feedback to API
+      await fetch("/api/feedback", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          scanId: params.id,
+          isHelpful,
+          resultType: result.result,
+        }),
+      })
+
+      setFeedbackSubmitted(true)
+      toast.success("Thank you for your feedback!")
+    } catch (error) {
+      console.error("Error submitting feedback:", error)
+      toast.error("Failed to submit feedback")
+    }
+  }
+
+  const handleNewScan = () => {
+    router.push("/upload")
   }
 
   if (loading) {
@@ -146,16 +165,15 @@ export default function ResultPage({ params }: { params: { id: string } }) {
     )
   }
 
-  const drugDetails = getDrugDetails(result.result)
   const isFake = result.result === "fake"
   const formattedDate = new Date(result.createdAt).toLocaleDateString()
 
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
-      <main className="flex-1">
+      <main className="flex-1 bg-muted/30">
         <div className="container py-12 md:py-16">
-          <div className="mx-auto max-w-3xl">
+          <div className="mx-auto max-w-4xl">
             <div className="mb-6">
               <Button variant="ghost" size="sm" asChild className="mb-4">
                 <Link href="/upload" className="flex items-center gap-1">
@@ -164,9 +182,9 @@ export default function ResultPage({ params }: { params: { id: string } }) {
                 </Link>
               </Button>
 
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-4">
                 <h1 className="text-2xl font-bold md:text-3xl">Verification Result</h1>
-                <Badge variant={isFake ? "destructive" : "default"} className="text-sm">
+                <Badge variant={isFake ? "destructive" : "default"} className="px-3 py-1 text-sm">
                   {isFake ? "Potentially Fake" : "Likely Original"}
                 </Badge>
               </div>
@@ -177,9 +195,10 @@ export default function ResultPage({ params }: { params: { id: string } }) {
                 <div className="relative aspect-square w-full">
                   <Image
                     src={result.imageUrl || "/placeholder.svg"}
-                    alt={drugDetails.drugName}
+                    alt={result.drugName}
                     fill
-                    className="object-cover"
+                    className="object-contain"
+                    sizes="(max-width: 768px) 100vw, 50vw"
                   />
                 </div>
               </Card>
@@ -213,12 +232,12 @@ export default function ResultPage({ params }: { params: { id: string } }) {
                       <div className="flex items-center gap-2">
                         <Pill className="h-4 w-4 text-muted-foreground" />
                         <span className="text-muted-foreground">Drug:</span>
-                        <span className="font-medium">{drugDetails.drugName}</span>
+                        <span className="font-medium">{result.drugName}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Fingerprint className="h-4 w-4 text-muted-foreground" />
                         <span className="text-muted-foreground">Manufacturer:</span>
-                        <span className="font-medium">{drugDetails.manufacturer}</span>
+                        <span className="font-medium">{result.manufacturer}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -237,10 +256,15 @@ export default function ResultPage({ params }: { params: { id: string } }) {
                 </Card>
 
                 <Card>
-                  <CardContent className="p-6">
-                    <h3 className="mb-3 text-lg font-medium">Key Indicators</h3>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Info className="h-4 w-4" />
+                      Key Indicators
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
                     <ul className="space-y-2 text-sm">
-                      {drugDetails.indicators.map((indicator, index) => (
+                      {result.indicators.map((indicator, index) => (
                         <li key={index} className="flex items-start gap-2">
                           {isFake ? (
                             <AlertTriangle className="mt-0.5 h-4 w-4 text-destructive" />
@@ -254,6 +278,30 @@ export default function ResultPage({ params }: { params: { id: string } }) {
                   </CardContent>
                 </Card>
 
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Was this result helpful?</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {!feedbackSubmitted ? (
+                      <div className="flex gap-3">
+                        <Button variant="outline" className="flex-1 gap-2" onClick={() => submitFeedback(true)}>
+                          <ThumbsUp className="h-4 w-4" />
+                          Yes
+                        </Button>
+                        <Button variant="outline" className="flex-1 gap-2" onClick={() => submitFeedback(false)}>
+                          <ThumbsDown className="h-4 w-4" />
+                          No
+                        </Button>
+                      </div>
+                    ) : (
+                      <p className="text-center text-sm text-muted-foreground">
+                        Thank you for your feedback! It helps us improve our verification system.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+
                 <div className="flex gap-3">
                   <Button variant="outline" className="flex-1 gap-2" onClick={handleCopyLink}>
                     <Copy className="h-4 w-4" />
@@ -264,10 +312,14 @@ export default function ResultPage({ params }: { params: { id: string } }) {
                     Share
                   </Button>
                 </div>
+
+                <Button className="w-full" onClick={handleNewScan}>
+                  Verify Another Medication
+                </Button>
               </div>
             </div>
 
-            <div className="mt-8 rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
+            <div className="mt-8 rounded-lg border bg-card p-4 text-sm text-muted-foreground">
               <p className="flex items-start gap-2">
                 <AlertTriangle className="mt-0.5 h-4 w-4" />
                 <span>

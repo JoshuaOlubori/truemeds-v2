@@ -2,13 +2,15 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Upload, X, AlertCircle, Loader2 } from "lucide-react"
+import { Upload, X, AlertCircle, Loader2, Info } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import { env } from "@/data/env/client"
 
 interface FileUploadProps {
   className?: string
@@ -19,9 +21,29 @@ export function FileUpload({ className }: FileUploadProps) {
   const [preview, setPreview] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [fileSize, setFileSize] = useState<string | null>(null)
+  const [willResize, setWillResize] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
+
+  // Get maximum image size from environment variable
+  const maxSizeMB = Number(env.NEXT_PUBLIC_MAX_IMAGE_SIZE_MB || 4.5)
+  const maxSizeBytes = maxSizeMB * 1024 * 1024
+
+  useEffect(() => {
+    if (file) {
+      // Format file size
+      const sizeInMB = file.size / 1024 / 1024
+      setFileSize(`${sizeInMB.toFixed(2)} MB`)
+
+      // Check if image needs resizing
+      setWillResize(file.size > maxSizeBytes)
+    } else {
+      setFileSize(null)
+      setWillResize(false)
+    }
+  }, [file, maxSizeBytes])
 
   const handleFileChange = (selectedFile: File | null) => {
     setError(null)
@@ -32,9 +54,9 @@ export function FileUpload({ className }: FileUploadProps) {
       return
     }
 
-    // Check file size (max 5MB)
-    if (selectedFile.size > 5 * 1024 * 1024) {
-      setError("File size exceeds 5MB limit")
+    // Check file size (max 10MB as hard limit)
+    if (selectedFile.size > 10 * 1024 * 1024) {
+      setError("File size exceeds 10MB limit")
       return
     }
 
@@ -93,8 +115,8 @@ export function FileUpload({ className }: FileUploadProps) {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         }
-      } catch (error) {
-        console.log(error, ": ","Geolocation not available or denied")
+      } catch (error){
+        console.log(error, " :Geolocation not available or denied")
       }
 
       // Create form data
@@ -112,16 +134,30 @@ export function FileUpload({ className }: FileUploadProps) {
         body: formData,
       })
 
+      // Improved error handling
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to upload image")
+        const contentType = response.headers.get("content-type")
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || "Failed to upload image")
+        } else {
+          const errorText = await response.text()
+          throw new Error(`Server error: ${response.status} ${errorText.substring(0, 100)}...`)
+        }
       }
 
       const data = await response.json()
+
+      // Store the result in localStorage for demo purposes
+      localStorage.setItem(`scan-${data.id}`, JSON.stringify(data))
+
+      toast.success("Image analyzed successfully!")
       router.push(`/results/${data.id}`)
     } catch (error) {
       console.error("Upload error:", error)
       setError(error instanceof Error ? error.message : "Failed to upload image")
+      toast.error("Failed to analyze image. Please try again.")
+    } finally {
       setIsUploading(false)
     }
   }
@@ -130,7 +166,7 @@ export function FileUpload({ className }: FileUploadProps) {
     <div className={className}>
       <Card
         className={cn(
-          "flex h-64 cursor-pointer flex-col items-center justify-center border-2 border-dashed p-6 transition-colors",
+          "flex cursor-pointer flex-col items-center justify-center border-2 border-dashed p-6 transition-colors",
           isDragging ? "border-primary bg-primary/5" : "border-border",
           preview ? "h-auto" : "h-64",
         )}
@@ -146,7 +182,7 @@ export function FileUpload({ className }: FileUploadProps) {
             </div>
             <h3 className="mb-1 text-lg font-medium">Upload Drug Image</h3>
             <p className="mb-4 text-sm text-muted-foreground">Drag and drop or click to upload</p>
-            <p className="text-xs text-muted-foreground">JPG, PNG, HEIC • Max 5MB</p>
+            <p className="text-xs text-muted-foreground">JPG, PNG, HEIC • Max 10MB</p>
           </div>
         ) : (
           <div className="relative w-full" onClick={(e) => e.stopPropagation()}>
@@ -171,6 +207,19 @@ export function FileUpload({ className }: FileUploadProps) {
                 className="mx-auto max-h-[400px] w-auto object-contain"
               />
             </div>
+
+            {fileSize && (
+              <div className="mt-2 flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                <span>File size: {fileSize}</span>
+                {willResize && (
+                  <div className="flex items-center gap-1 text-amber-500 dark:text-amber-400">
+                    <Info className="h-3 w-3" />
+                    <span>Will be resized (over {maxSizeMB}MB)</span>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="mt-4 flex justify-center">
               <Button
                 onClick={(e) => {

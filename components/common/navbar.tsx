@@ -1,15 +1,15 @@
-"use client";
+"use client"
 
-import Link from "next/link";
-import { ModeToggle } from "../home/mode-toggle";
-import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { Upload, BarChart3, Shield } from "lucide-react";
+import Link from "next/link"
+import { ModeToggle } from "../home/mode-toggle"
+import { usePathname } from "next/navigation"
+import { cn } from "@/lib/utils"
+import { Upload, Shield, Database } from "lucide-react"
 // import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 
 export function Navbar() {
-  const pathname = usePathname();
-  const isAdmin = pathname.startsWith("/admin");
+  const pathname = usePathname()
+  const isAdmin = pathname.startsWith("/admin")
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -33,9 +33,7 @@ export function Navbar() {
                 href="/upload"
                 className={cn(
                   "text-sm font-medium transition-colors hover:text-primary",
-                  pathname === "/upload"
-                    ? "text-primary"
-                    : "text-muted-foreground"
+                  pathname === "/upload" ? "text-primary" : "text-muted-foreground",
                 )}
               >
                 <span className="hidden sm:inline-flex items-center gap-1">
@@ -45,32 +43,34 @@ export function Navbar() {
                 <Upload className="h-5 w-5 sm:hidden" />
               </Link>
               <Link
-                href="/admin/login"
+                href="/admin/training"
                 className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
               >
-                Admin
+                <span className="hidden sm:inline-flex items-center gap-1">
+                  <Database className="h-4 w-4" />
+                  Admin Training
+                </span>
+                <Database className="h-5 w-5 sm:hidden" />
               </Link>
             </>
           ) : (
             <Link
-              href="/admin/dashboard"
+              href="/admin/training"
               className={cn(
                 "text-sm font-medium transition-colors hover:text-primary",
-                pathname === "/admin/dashboard"
-                  ? "text-primary"
-                  : "text-muted-foreground"
+                pathname === "/admin/training" ? "text-primary" : "text-muted-foreground",
               )}
             >
               <span className="hidden sm:inline-flex items-center gap-1">
-                <BarChart3 className="h-4 w-4" />
-                Dashboard
+                <Database className="h-4 w-4" />
+                Training Data
               </span>
-              <BarChart3 className="h-5 w-5 sm:hidden" />
+              <Database className="h-5 w-5 sm:hidden" />
             </Link>
           )}
           <ModeToggle />
         </nav>
       </div>
     </header>
-  );
+  )
 }

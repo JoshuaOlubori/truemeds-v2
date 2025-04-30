@@ -1,30 +1,23 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from "next/server"
 import {
   getTotalScans,
   getRecentScans,
   getFakeDetectionStats,
   getTrainingStats,
   getMonthlyTrends,
-} from "@/server/db/stats";
+} from "@/server/db/stats"
 
 export async function GET() {
   try {
-    const [
-      totalScans,
-      recentScans,
-      fakeDetections,
-      trainingStats,
-      monthlyTrends,
-    ] = await Promise.all([
+    const [totalScans, recentScans, fakeDetections, trainingStats, monthlyTrends] = await Promise.all([
       getTotalScans(),
       getRecentScans(),
       getFakeDetectionStats(),
       getTrainingStats(),
       getMonthlyTrends(),
-    ]);
+    ])
 
-    const fakeDetectionRate =
-      totalScans > 0 ? (fakeDetections / totalScans) * 100 : 0;
+    const fakeDetectionRate = totalScans > 0 ? (fakeDetections / totalScans) * 100 : 0
 
     return NextResponse.json({
       scans: {
@@ -48,12 +41,9 @@ export async function GET() {
       trends: {
         monthly: monthlyTrends ?? [],
       },
-    });
+    })
   } catch (error) {
-    console.error("Error fetching stats:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch stats" },
-      { status: 500 }
-    );
+    console.error("Error fetching stats:", error)
+    return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 })
   }
 }

@@ -75,11 +75,7 @@ export function TimeSeriesChart({
                   stroke="hsl(var(--muted-foreground))"
                   tickFormatter={valueFormatter}
                 />
-                <ChartTooltip
-                  content={
-                    <ChartTooltipContent />
-                  }
-                />
+                <ChartTooltip content={<ChartTooltipContent />} />
                 {categories.map((category, index) => (
                   <Area
                     key={category}

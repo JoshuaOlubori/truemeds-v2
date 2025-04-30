@@ -15,7 +15,7 @@ export function UploadButton({ className, variant = "default", size = "default" 
     <Button asChild variant={variant} size={size} className={className}>
       <Link href="/upload" className="flex items-center gap-2">
         <Upload className="h-4 w-4" />
-        Verify Drug
+        Verify Your Medication
       </Link>
     </Button>
   )

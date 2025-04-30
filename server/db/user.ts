@@ -1,13 +1,9 @@
 import { db } from "@/drizzle/db"
 import { UsersTable } from "@/drizzle/schema"
-import { SQL } from "drizzle-orm"
+import type { SQL } from "drizzle-orm"
 
-export async function createUser(
-  data: typeof UsersTable.$inferInsert
-) {
-  const [newUser] = 
-  
-  await db
+export async function createUser(data: typeof UsersTable.$inferInsert) {
+  const [newUser] = await db
     .insert(UsersTable)
     .values(data)
     .onConflictDoNothing({
@@ -25,33 +21,22 @@ export async function createUser(
   //     userId: newSubscription.userId,
   //   })
   // }
- return newUser
+  return newUser
 }
 
 // update user
-export async function updateUser(
-    where: SQL,
-    data: Partial<typeof UsersTable.$inferInsert>
-  ) {
-    // const [updatedUser] = 
-    await db
-      .update(UsersTable)
-      .set(data)
-      .where(where)
-      .returning({
-        id: UsersTable.id,
-        userId: UsersTable.clerkUserId,
-      })
-  
-    // if (updatedSubscription != null) {
-    //   revalidateDbCache({
-    //     tag: CACHE_TAGS.subscription,
-    //     userId: updatedSubscription.userId,
-    //     id: updatedSubscription.id,
-    //   })
-    // }
-  }
+export async function updateUser(where: SQL, data: Partial<typeof UsersTable.$inferInsert>) {
+  // const [updatedUser] =
+  await db.update(UsersTable).set(data).where(where).returning({
+    id: UsersTable.id,
+    userId: UsersTable.clerkUserId,
+  })
 
-
-
-  
+  // if (updatedSubscription != null) {
+  //   revalidateDbCache({
+  //     tag: CACHE_TAGS.subscription,
+  //     userId: updatedSubscription.userId,
+  //     id: updatedSubscription.id,
+  //   })
+  // }
+}
