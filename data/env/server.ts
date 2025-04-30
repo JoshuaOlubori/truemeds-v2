@@ -7,7 +7,7 @@ export const env = createEnv({
     DATABASE_URL: z.string().url(),
     CLERK_SECRET_KEY: z.string(),
     CLERK_WEBHOOK_SIGNING_SECRET: z.string(),
-    AI_MODEL: z.enum(["grok", "gemini"]).default("grok"),
+    AI_MODEL: z.enum(["grok", "gemini"]).default("gemini"),
     GEMINI_API_KEY: z.string().optional(),
   },
 
