@@ -3,9 +3,9 @@ import { db } from "@/drizzle/db";
 import { scans } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: { id: string } }
+export default async function GET(
+  request: NextRequest,
+  { params } : { params: Promise<{ id: string }> }
 ) {
   try {
 
