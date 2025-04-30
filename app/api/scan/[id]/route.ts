@@ -1,4 +1,4 @@
-// @ts-ignore
+// @ts-expect-error
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/drizzle/db";
