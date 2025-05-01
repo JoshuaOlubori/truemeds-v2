@@ -1,37 +1,43 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { put } from "@vercel/blob"
-import { nanoid } from "nanoid"
-import { db } from "@/drizzle/db"
-import { trainingImages } from "@/drizzle/schema"
-import { desc } from "drizzle-orm"
+import { type NextRequest, NextResponse } from "next/server";
+import { put } from "@vercel/blob";
+import { nanoid } from "nanoid";
+import { db } from "@/drizzle/db";
+import { trainingImages } from "@/drizzle/schema";
+import { auth } from "@clerk/nextjs/server";
+import { desc } from "drizzle-orm";
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData()
-    const file = formData.get("file") as File
-    const label = formData.get("label") as string
-    const metadata = formData.get("metadata") as string
+    const { userId } = await auth();
 
-    if (!file || !label) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized - Please login first" },
+        { status: 401 }
+      );
     }
 
-    if (label !== "fake" && label !== "original") {
-      return NextResponse.json({ error: "Invalid label" }, { status: 400 })
+    const formData = await request.formData();
+    const file = formData.get("file") as File;
+    const label = formData.get("label") as string;
+    const metadata = formData.get("metadata") as string;
+
+    if (!file) {
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Upload the image to Vercel Blob
+    // Upload to blob storage
     const blob = await put(`training/${nanoid()}-${file.name}`, file, {
       access: "public",
-    })
+    });
 
     // Parse metadata if provided
-    let parsedMetadata = {}
+    let parsedMetadata = null;
     if (metadata) {
       try {
-        parsedMetadata = JSON.parse(metadata)
+        parsedMetadata = JSON.parse(metadata);
       } catch (e) {
-        console.error("Invalid metadata JSON:", e)
+        console.error("Invalid metadata JSON:", e);
       }
     }
 
@@ -41,32 +47,40 @@ export async function POST(request: NextRequest) {
       .values({
         imageUrl: blob.url,
         label,
-        uploadedBy: "admin", // Since we removed authentication
+        uploadedBy: userId,
         metadata: parsedMetadata,
         status: "pending",
         createdAt: new Date(),
       })
-      .returning()
+      .returning();
 
     return NextResponse.json({
       id: trainingImage.id,
       imageUrl: trainingImage.imageUrl,
       label: trainingImage.label,
       status: trainingImage.status,
-    })
+    });
   } catch (error) {
-    console.error("Error processing training image:", error)
-    return NextResponse.json({ error: "Failed to process training image" }, { status: 500 })
+    console.error("Error processing training image:", error);
+    return NextResponse.json(
+      { error: "Failed to process training image" },
+      { status: 500 }
+    );
   }
 }
 
-
 export async function GET() {
   try {
-    const images = await db.select().from(trainingImages).orderBy(desc(trainingImages.createdAt))
-    return NextResponse.json(images)
+    const images = await db
+      .select()
+      .from(trainingImages)
+      .orderBy(desc(trainingImages.createdAt));
+    return NextResponse.json(images);
   } catch (error) {
-    console.error("Error fetching training images:", error)
-    return NextResponse.json({ error: "Failed to fetch training images" }, { status: 500 })
+    console.error("Error fetching training images:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch training images" },
+      { status: 500 }
+    );
   }
 }
